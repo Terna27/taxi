@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="https://kit.fontawesome.com/0d440e0a88.js" crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="style.css">
+    <title>Interactive Map with Satellite View</title>
+</head>
+<body>
+    <div class="container">
+      <div class="topp">
+        <div class="topleftt">
+            <i class="fa-solid fa-bars"></i>
+            <i class="fa-light fa-boxes-stacked"></i>
+        </div>
+        <div class="toprytt">
+            <div class="map-views">
+                <button id="streetView" class="view-btn active" title="Street View">
+                    <i class="fa-solid fa-road"></i>
+                </button>
+                <button id="satelliteView" class="view-btn" title="Satellite View">
+                    <i class="fa-solid fa-earth-americas"></i>
+                </button>
+            </div>
+            <i class="fa-regular fa-expand" title="Fullscreen"></i>
+            <i class="fa-solid fa-magnifying-glass" title="Search"></i>
+            <i class="fa-solid fa-bell" title="Notifications"></i>
+            <i class="fa-solid fa-circle-user" title="Account"></i>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div class="loading-spinner"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet-rotatedmarker@latest/leaflet.rotatedMarker.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
