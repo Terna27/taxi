@@ -1,1 +1,22 @@
+# Environment variables / secrets
 .env
+.env.local
+.env.*.local
+
+# Build output
+bin/
+dist/
+tmp/
+*.exe
+*.out
+
+# Logs
+*.log
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
