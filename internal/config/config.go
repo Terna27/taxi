@@ -10,6 +10,7 @@ import (
 type Config struct {
 	AppPort     string
 	DatabaseURL string
+	GoogleRoutesAPIKey string
 }
 
 func Load() (Config, error) {

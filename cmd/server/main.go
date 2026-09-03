@@ -28,9 +28,18 @@ func main() {
 	}
 	defer db.Close()
 
-	emergencyRepository := repositories.NewEmergencyRepository(db)
-	emergencyService := services.NewEmergencyService(emergencyRepository)
-	emergencyHandler := handlers.NewEmergencyHandler(emergencyService)
+	emergencyRepository :=
+		repositories.NewEmergencyRepository(db)
+
+	emergencyService :=
+		services.NewEmergencyService(
+			emergencyRepository,
+		)
+
+	emergencyHandler :=
+		handlers.NewEmergencyHandler(
+			emergencyService,
+		)
 
 	responseOrganizationRepository :=
 		repositories.NewResponseOrganizationRepository(db)
@@ -45,9 +54,44 @@ func main() {
 			responseOrganizationService,
 		)
 
+	organizationDiscoveryService :=
+		services.NewOrganizationDiscoveryService(
+			responseOrganizationRepository,
+		)
+
+	organizationDiscoveryHandler :=
+		handlers.NewOrganizationDiscoveryHandler(
+			organizationDiscoveryService,
+		)
+
+	incidentCandidateRepository :=
+		repositories.NewIncidentCandidateRepository(db)
+
+	incidentCandidateDiscoveryService :=
+		services.NewIncidentCandidateDiscoveryService(
+			incidentCandidateRepository,
+			responseOrganizationRepository,
+		)
+
+	emergencyAssignmentRepository :=
+		repositories.NewEmergencyAssignmentRepository(db)
+
+	dispatchService :=
+		services.NewDispatchService(
+			incidentCandidateDiscoveryService,
+			emergencyAssignmentRepository,
+		)
+
+	dispatchHandler :=
+		handlers.NewDispatchHandler(
+			dispatchService,
+		)
+
 	handler := routes.New(
 		emergencyHandler,
 		responseOrganizationHandler,
+		organizationDiscoveryHandler,
+		dispatchHandler,
 	)
 
 	server := &http.Server{

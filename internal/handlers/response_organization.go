@@ -9,6 +9,8 @@ import (
 	"taxi/internal/services"
 )
 
+const maxResponseOrganizationRequestBodyBytes = 64 * 1024
+
 type ResponseOrganizationHandler struct {
 	service *services.ResponseOrganizationService
 }
@@ -21,7 +23,6 @@ type createResponseOrganizationRequest struct {
 	Address          *string  `json:"address"`
 	Phone            *string  `json:"phone"`
 	Email            *string  `json:"email"`
-	OnboardingSource string   `json:"onboarding_source"`
 	Capabilities     []string `json:"capabilities"`
 }
 
@@ -40,7 +41,7 @@ func (h *ResponseOrganizationHandler) Create(
 	r.Body = http.MaxBytesReader(
 		w,
 		r.Body,
-		64*1024,
+		maxResponseOrganizationRequestBodyBytes,
 	)
 
 	defer r.Body.Close()
@@ -74,7 +75,6 @@ func (h *ResponseOrganizationHandler) Create(
 			Address:          request.Address,
 			Phone:            request.Phone,
 			Email:            request.Email,
-			OnboardingSource: request.OnboardingSource,
 			Capabilities:     request.Capabilities,
 		},
 	)
@@ -82,16 +82,20 @@ func (h *ResponseOrganizationHandler) Create(
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrOrganizationNameRequired),
+			errors.Is(err, services.ErrOrganizationNameTooLong),
 			errors.Is(err, services.ErrOrganizationTypeRequired),
 			errors.Is(err, services.ErrOrganizationTypeNotFound),
 			errors.Is(err, services.ErrOrganizationLatitudeRequired),
 			errors.Is(err, services.ErrOrganizationLongitudeRequired),
 			errors.Is(err, services.ErrOrganizationLatitudeInvalid),
 			errors.Is(err, services.ErrOrganizationLongitudeInvalid),
-			errors.Is(err, services.ErrOnboardingSourceInvalid),
 			errors.Is(err, services.ErrCapabilitiesRequired),
+			errors.Is(err, services.ErrTooManyCapabilities),
 			errors.Is(err, services.ErrCapabilityNotFound),
 			errors.Is(err, services.ErrDuplicateCapability),
+			errors.Is(err, services.ErrOrganizationAddressTooLong),
+			errors.Is(err, services.ErrOrganizationPhoneTooLong),
+			errors.Is(err, services.ErrOrganizationEmailTooLong),
 			errors.Is(err, services.ErrOrganizationEmailInvalid):
 
 			writeJSON(w, http.StatusBadRequest, map[string]string{

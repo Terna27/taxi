@@ -17,11 +17,24 @@ var (
 	ErrOrganizationLongitudeRequired = errors.New("longitude is required")
 	ErrOrganizationLatitudeInvalid   = errors.New("latitude must be between -90 and 90")
 	ErrOrganizationLongitudeInvalid  = errors.New("longitude must be between -180 and 180")
-	ErrOnboardingSourceInvalid       = errors.New("invalid onboarding_source")
 	ErrCapabilitiesRequired          = errors.New("at least one capability is required")
 	ErrCapabilityNotFound            = errors.New("one or more capabilities were not found or are inactive")
 	ErrDuplicateCapability           = errors.New("capabilities must not contain duplicates")
 	ErrOrganizationEmailInvalid      = errors.New("email is invalid")
+	ErrOrganizationNameTooLong       = errors.New("name must not exceed 200 characters")
+	ErrOrganizationAddressTooLong    = errors.New("address must not exceed 1000 characters")
+	ErrOrganizationPhoneTooLong      = errors.New("phone must not exceed 50 characters")
+	ErrOrganizationEmailTooLong      = errors.New("email must not exceed 255 characters")
+	ErrTooManyCapabilities           = errors.New("too many capabilities")
+)
+
+const (
+	selfServiceOnboardingSource  = "SELF_SERVICE"
+	maxOrganizationNameLength    = 200
+	maxOrganizationAddressLength = 1000
+	maxOrganizationPhoneLength   = 50
+	maxOrganizationEmailLength   = 255
+	maxOrganizationCapabilities  = 20
 )
 
 type ResponseOrganizationRepository interface {
@@ -47,7 +60,6 @@ type CreateResponseOrganizationInput struct {
 	Address          *string
 	Phone            *string
 	Email            *string
-	OnboardingSource string
 	Capabilities     []string
 }
 
@@ -71,6 +83,10 @@ func (s *ResponseOrganizationService) Create(
 
 	if input.Name == "" {
 		return nil, ErrOrganizationNameRequired
+	}
+
+	if len(input.Name) > maxOrganizationNameLength {
+		return nil, ErrOrganizationNameTooLong
 	}
 
 	input.OrganizationType = strings.ToUpper(
@@ -97,26 +113,16 @@ func (s *ResponseOrganizationService) Create(
 		return nil, ErrOrganizationLongitudeInvalid
 	}
 
-	input.OnboardingSource = strings.ToUpper(
-		strings.TrimSpace(input.OnboardingSource),
-	)
-
-	if input.OnboardingSource == "" {
-		input.OnboardingSource = "ADMIN"
-	}
-
-	switch input.OnboardingSource {
-	case "ADMIN", "SELF_SERVICE", "PARTNER_IMPORT":
-	default:
-		return nil, ErrOnboardingSourceInvalid
-	}
-
 	if len(input.Capabilities) == 0 {
 		return nil, ErrCapabilitiesRequired
 	}
 
+	if len(input.Capabilities) > maxOrganizationCapabilities {
+		return nil, ErrTooManyCapabilities
+	}
+
 	normalizedCapabilities := make([]string, 0, len(input.Capabilities))
-	seenCapabilities := make(map[string]struct{})
+	seenCapabilities := make(map[string]struct{}, len(input.Capabilities))
 
 	for _, capability := range input.Capabilities {
 		capability = strings.ToUpper(
@@ -132,20 +138,33 @@ func (s *ResponseOrganizationService) Create(
 		}
 
 		seenCapabilities[capability] = struct{}{}
+
 		normalizedCapabilities = append(
 			normalizedCapabilities,
 			capability,
 		)
 	}
 
-	input.Capabilities = normalizedCapabilities
-
 	input.Address = cleanOptionalString(input.Address)
 	input.Phone = cleanOptionalString(input.Phone)
 	input.Email = cleanOptionalString(input.Email)
 
+	if input.Address != nil &&
+		len(*input.Address) > maxOrganizationAddressLength {
+		return nil, ErrOrganizationAddressTooLong
+	}
+
+	if input.Phone != nil &&
+		len(*input.Phone) > maxOrganizationPhoneLength {
+		return nil, ErrOrganizationPhoneTooLong
+	}
+
 	if input.Email != nil {
-		if !strings.Contains(*input.Email, "@") {
+		if len(*input.Email) > maxOrganizationEmailLength {
+			return nil, ErrOrganizationEmailTooLong
+		}
+
+		if !isValidSimpleEmail(*input.Email) {
 			return nil, ErrOrganizationEmailInvalid
 		}
 	}
@@ -159,8 +178,8 @@ func (s *ResponseOrganizationService) Create(
 		input.Address,
 		input.Phone,
 		input.Email,
-		input.OnboardingSource,
-		input.Capabilities,
+		selfServiceOnboardingSource,
+		normalizedCapabilities,
 	)
 
 	if err != nil {
@@ -191,4 +210,24 @@ func cleanOptionalString(value *string) *string {
 	}
 
 	return &cleaned
+}
+
+func isValidSimpleEmail(value string) bool {
+	if strings.ContainsAny(value, " \t\r\n") {
+		return false
+	}
+
+	at := strings.IndexByte(value, '@')
+
+	if at <= 0 || at == len(value)-1 {
+		return false
+	}
+
+	if strings.IndexByte(value[at+1:], '@') >= 0 {
+		return false
+	}
+
+	domain := value[at+1:]
+
+	return strings.Contains(domain, ".")
 }
